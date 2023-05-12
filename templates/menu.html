@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Classless example • Pico.css</title>
+    <meta
+      name="description"
+      content="Just a pure semantic HTML markup, without .classes.  Built with Pico CSS."
+    />
+
+    <!-- Pico.css (Classless version) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.classless.min.css"
+    />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header>
+      <hgroup>
+        <h1>Menu</h1>
+        <h2>Menu for a week</h2>
+      </hgroup>
+    </header>
+    <main>
+        <article>
+            <code>
+                {{menu}}
+            </code>    
+        </article>
+        <details>
+          <summary>Monday</summary>
+          <article>
+            <header>Breakfast</header>
+            <p>
+              Каша
+            </p>
+          </article>
+          
+          <article>
+            <header>Lunch</header>
+            <p>
+              Борщ
+            </p>
+          </article>
+
+        </details>
+    </main>
+ </body>
