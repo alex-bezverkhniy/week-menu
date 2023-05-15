@@ -1,6 +1,7 @@
 """
 A sample Hello World server.
 """
+import datetime
 import os
 import pickle
 import logging
@@ -44,7 +45,7 @@ def menu():
         app.logger.WARN('Cannot unpickle cache.')        
         menu = genMenu(DATA_URL)
   
-    return render_template('menu.html', debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    return render_template('menu.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
 @app.route('/menu', methods=['PATCH'])
 def flashMenuHandler():

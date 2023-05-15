@@ -69,8 +69,14 @@
         </article>
         {% endif %}
         {% for weekday in  week_days %}          
-          <details>
-            <summary>{{ weekday }}</summary>
+          <details {{'open' if current_weekday == loop.index0 }}>
+            <summary>
+              {% if current_weekday == loop.index0 %}
+              <ins>{{ weekday }}</ins>
+              {%else%}
+              {{ weekday }}
+              {%endif%}
+            </summary>
             <div class="grid">
               <article>
                 <header>Breakfast</header>
