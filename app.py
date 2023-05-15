@@ -17,21 +17,7 @@ CACHE_FILENAME = './menu.pickle'
 app = Flask(__name__)
 
 
-@app.route('/')
-def index():
-    """Return a friendly HTTP greeting."""
-    message = "It's running!"
-
-    """Get Cloud Run environment variables."""
-    service = os.environ.get('K_SERVICE', 'Unknown service')
-    revision = os.environ.get('K_REVISION', 'Unknown revision')
-
-    return render_template('index.html',
-        message=message,
-        Service=service,
-        Revision=revision)
-
-@app.route('/menu', methods=['GET'])
+@app.route('/', methods=['GET'])
 def menu():
     """Return menu for a week"""
     menu = []
@@ -45,7 +31,7 @@ def menu():
         app.logger.WARN('Cannot unpickle cache.')        
         menu = genMenu(DATA_URL)
   
-    return render_template('menu.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
 @app.route('/menu', methods=['PATCH'])
 def flashMenuHandler():
