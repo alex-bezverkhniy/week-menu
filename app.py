@@ -2,13 +2,15 @@
 A sample Hello World server.
 """
 import os
+import pickle
+import logging
 import pandas as pd
 
 from flask import Flask, render_template
 
 DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
 env = os.environ.get('ENV', 'PROD')
-
+CACHE_FILENAME = './menu.pickle'
 
 # pylint: disable=C0103
 app = Flask(__name__)
@@ -28,17 +30,37 @@ def index():
         Service=service,
         Revision=revision)
 
-@app.route('/menu')
+@app.route('/menu', methods=['GET'])
 def menu():
     """Return menu for a week"""
-    
-    """Load data from Google Sheets"""
-    menu = gen_menu(DATA_URL)
+    menu = []
+    try:
+        if os.path.isfile(CACHE_FILENAME):
+            with open(CACHE_FILENAME, 'rb') as cache:
+                menu = pickle.load(cache)            
+        else:
+            menu = flashMenu()
+    except :
+        app.logger.WARN('Cannot unpickle cache.')        
+        menu = genMenu(DATA_URL)
   
-    return render_template('menu.html', DEBUG=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    return render_template('menu.html', debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+
+@app.route('/menu', methods=['PATCH'])
+def flashMenuHandler():
+    """Flash the cache with new data from Google Sheets"""
+    flashMenu()
+    return ('', 204)
+
+def flashMenu():
+    app.logger.info('Flash the cache with new data from the remote host')
+    menu = genMenu(DATA_URL)
+    with open(CACHE_FILENAME, 'wb') as cache:
+        pickle.dump(menu, cache, protocol=pickle.HIGHEST_PROTOCOL)        
+    return menu
 
 
-def load_menu(url):
+def importMenu(url):
     df = pd.read_csv(url)
     return df
 
@@ -46,8 +68,9 @@ def shuffle_week_menu(df, type):
   breakfast_ser = df[type][df[type].notna()]
   return breakfast_ser.sample(frac=1).to_list()[0:7]
 
-def gen_menu(url):
-    df = load_menu(url)
+def genMenu(url):
+    app.logger.info('Loads menu from the remote host')
+    df = importMenu(url)
     breakfast_list = shuffle_week_menu(df, 'breakfast')
     lunch_list = shuffle_week_menu(df, 'lunch')
     dinner_list = shuffle_week_menu(df, 'dinner')
