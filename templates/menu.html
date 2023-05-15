@@ -14,6 +14,36 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.classless.min.css"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+      @media (min-width:320px)  { /* smartphones, iPhone, portrait 480x320 phones */ 
+        body>main {
+          max-width: 95%;
+        }
+        .grid>article {
+          padding-bottom: 0;
+          margin-bottom: 0;
+          margin-top: 1em;
+        }
+        body>header {
+          padding-left: 1em;
+          padding-right: 1em;
+        }
+
+      }
+      @media (min-width:481px)  { /* portrait e-readers (Nook/Kindle), smaller tablets @ 600 or @ 640 wide. */ 
+        body>main {
+          max-width: 95%;
+        }
+      }
+      body>header {
+        padding-top: 1em;
+        padding-bottom: 1em;
+      }
+      article>header {
+        padding: 1em;
+      }
+    </style>
   </head>
 
   <body>
@@ -25,27 +55,43 @@
       </hgroup>
     </header>
     <main>
+      {% if debug %}
         <article>
             <code>
                 {{menu}}
             </code>    
         </article>
-        <details>
-          <summary>Monday</summary>
-          <article>
-            <header>Breakfast</header>
-            <p>
-              Каша
-            </p>
-          </article>
-          
-          <article>
-            <header>Lunch</header>
-            <p>
-              Борщ
-            </p>
-          </article>
-
-        </details>
+        {% endif %}
+        {% for weekday in  week_days %}          
+          <details>
+            <summary>{{ weekday }}</summary>
+            <div class="grid">
+              <article>
+                <header>Breakfast</header>
+                <p>
+                  {{menu['breakfast'][loop.index0]}}
+                </p>
+              </article>              
+              <article>
+                <header>Lunch</header>
+                <p>
+                  {{menu['lunch'][loop.index0]}}
+                </p>
+              </article>
+              <article>
+                <header>Dinner</header>
+                <p>
+                  {{menu['dinner'][loop.index0]}}
+                </p>
+              </article>
+              <article>
+                <header>Snacks</header>
+                <p>
+                  {{menu['snacks'][loop.index0]}}
+                </p>
+              </article>
+            </div>
+          </details>  
+        {% endfor%}      
     </main>
  </body>

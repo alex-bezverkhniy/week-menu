@@ -7,6 +7,7 @@ import pandas as pd
 from flask import Flask, render_template
 
 DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
+env = os.environ.get('ENV', 'PROD')
 
 
 # pylint: disable=C0103
@@ -34,7 +35,7 @@ def menu():
     """Load data from Google Sheets"""
     menu = gen_menu(DATA_URL)
   
-    return render_template('menu.html', menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    return render_template('menu.html', DEBUG=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
 
 def load_menu(url):
@@ -55,4 +56,4 @@ def gen_menu(url):
 
 if __name__ == '__main__':
     server_port = os.environ.get('PORT', '8080')
-    app.run(debug=False, port=server_port, host='0.0.0.0')
+    app.run(debug=(env == 'DEV'), port=server_port, host='0.0.0.0')
