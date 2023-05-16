@@ -69,7 +69,7 @@
         </article>
         {% endif %}
         {% for weekday in  week_days %}          
-          <details {{'open' if current_weekday == loop.index0 }}>
+          <details {{'open' if (current_weekday == loop.index0) or debug}}>
             <summary>
               {% if current_weekday == loop.index0 %}
               <ins>{{ weekday }}</ins>
@@ -81,19 +81,19 @@
               <article>
                 <header>Breakfast</header>
                 <p>
-                  {{menu['breakfast'][loop.index0]}}
+                  {{menu['breakfast'][loop.index0]|markdown}}
                 </p>
               </article>              
               <article>
                 <header>Lunch</header>
                 <p>
-                  {{menu['lunch'][loop.index0]}}
+                  {{menu['lunch'][loop.index0]|markdown }}
                 </p>
               </article>
               <article>
                 <header>Dinner</header>
                 <p>
-                  {{menu['dinner'][loop.index0]}}
+                  {{menu['dinner'][loop.index0]|markdown }}
                 </p>
               </article>
               <article>
