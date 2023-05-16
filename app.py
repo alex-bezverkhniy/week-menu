@@ -21,6 +21,24 @@ Markdown(app)
 @app.route('/', methods=['GET'])
 def menu():
     """Return menu for a week"""
+    menu = getMenu()
+  
+    return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+
+@app.route('/dish/<name>', methods=['GET'])
+def menu():
+    """Return dish description for a week"""
+    menu = getMenu()
+  
+    return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+
+@app.route('/menu', methods=['PATCH'])
+def flashMenuHandler():
+    """Flash the cache with new data from Google Sheets"""
+    flashMenu()
+    return ('', 204)
+
+def getMenu():
     menu = []
     try:
         if os.path.isfile(CACHE_FILENAME):
@@ -31,14 +49,8 @@ def menu():
     except :
         app.logger.WARN('Cannot unpickle cache.')        
         menu = genMenu(DATA_URL)
-  
-    return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menu, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-
-@app.route('/menu', methods=['PATCH'])
-def flashMenuHandler():
-    """Flash the cache with new data from Google Sheets"""
-    flashMenu()
-    return ('', 204)
+    
+    return menu
 
 def flashMenu():
     app.logger.info('Flash the cache with new data from the remote host')
