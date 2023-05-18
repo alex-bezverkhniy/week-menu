@@ -1,0 +1,14 @@
+<script>
+    let refreshBtn = document.getElementById('refreshBtn');
+    refreshBtn.onclick = () => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PATCH", "/menu", true);
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 204) {
+          window.location.reload();
+        }
+      };
+      xhr.send(null);
+    };
+  </script>
+</body>

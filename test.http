@@ -1,3 +1,15 @@
-## Get menu data
+## Get menu csv
 
 GET https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv
+
+
+### Get menu data
+
+GET http://localhost:8080/
+Content-Type: application/json; charset=utf-8
+
+
+### Get dush by name
+
+GET http://localhost:8080/dish/breakfast/Яичница 
+Content-Type: application/json; charset=utf-8

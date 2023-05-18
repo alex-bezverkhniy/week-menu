@@ -1,0 +1,22 @@
+{% include 'header.html' %}
+<main>
+
+  {% if debug %}
+  <center>
+    <article>
+        <code>
+            {{dishData}}
+        </code>    
+    </article>
+  </center>
+    {% endif %}
+    <center>
+    <article class="dish">
+      <header>{{dishType}}</header>
+      <p>
+        {{dishData|markdown}}
+      </p>
+    </article>              
+    </center> 
+</main>
+{% include 'footer.html' %}
