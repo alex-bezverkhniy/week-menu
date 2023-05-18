@@ -16,7 +16,7 @@ DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9Ygeh
 env = os.environ.get('ENV', 'PROD')
 CACHE_FILENAME = './menu.pickle'
 
-menuData= []
+menuData= dict()
 
 # pylint: disable=C0103
 app = Flask(__name__)
@@ -30,10 +30,10 @@ Markdown(app)
 def menu():
     global menuData
     """Return menu for a week"""
-    menuData = getMenu()
+    menuData = getMenu()    
+    app.logger.debug(menuData)
     
-    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):
-        app.logger.debug(menuData)
+    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):        
         return menuData
     else:
         return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menuData, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
@@ -69,7 +69,7 @@ def flashMenuHandler():
 
 def getMenu():
     global menuData
-    if len(menuData) == 0:    
+    if not menuData :
         try:
             if os.path.isfile(CACHE_FILENAME):
                 with open(CACHE_FILENAME, 'rb') as cache:
