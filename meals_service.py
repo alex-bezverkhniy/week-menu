@@ -20,7 +20,7 @@ def week_menu(df, type):
     return meal_ser.to_list()[0:7]
 
 
-def load_week_menu(url, meal_type):
+def load_week_menu(df, meal_type):
     df = load_menu(url)
     return week_menu(df, meal_type)
 

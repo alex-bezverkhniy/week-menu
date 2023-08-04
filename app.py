@@ -32,16 +32,28 @@ def lunch_card():
     meal = mservice.get_random_meal(meals_list)
     meal_card(meal, lunch_card)
 
+@ui.refreshable
+def dinner_card():
+    meals_list = app.storage.user.get('dinner_list', [])
+    meal = mservice.get_random_meal(meals_list)
+    meal_card(meal, dinner_card)
+
 @ui.page('/')
 def index():
-    breakfast_list = mservice.load_week_menu(URL, 'breakfast')
-    lunch_list = mservice.load_week_menu(URL, 'lunch')
+    df = mservice.load_menu(URL)
+    breakfast_list = mservice.week_menu(df, 'breakfast')
+    lunch_list = mservice.week_menu(df, 'lunch')
+    dinner_list = mservice.week_menu(df, 'dinner')
+    
     app.storage.user['breakfast_list'] = breakfast_list
     app.storage.user['lunch_list'] = lunch_list
+    app.storage.user['dinner_list'] = dinner_list
+    
 
     with ui.row():                
         breakfast_card()
         lunch_card()
+        dinner_card()
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
         ui.label('Week menu')
         ui.button(icon='refresh').props('flat color=white')
