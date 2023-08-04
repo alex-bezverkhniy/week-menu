@@ -5,3 +5,4 @@
 .venv
 *.pickle
 .nicegui
+__pycache__
