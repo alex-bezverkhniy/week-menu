@@ -12,9 +12,9 @@ def meal_card(meal: str, card: ui.refreshable):
         title = mservice.get_meal_title(meal)
         image_url = mservice.get_meal_image(meal)
         desc = mservice.get_meal_description(meal)
-        with ui.image(image_url).style('min-width: 20em; max-width: 35em; min-height: 20em; max-height: 35em;'):
+        with ui.image(image_url).style('min-width: 15em; max-width: 35em; min-height: 15em; max-height: 35em;'):
             ui.label(title).classes(
-                'absolute-bottom text-subtitle2 text-center')
+                'absolute-bottom text-subtitle2 text-center')            
         with ui.card_section():
             ui.markdown(desc)
         with ui.card_actions():
@@ -24,19 +24,25 @@ def meal_card(meal: str, card: ui.refreshable):
 def breakfast_card():
     meals_list = app.storage.user.get('breakfast_list', [])
     meal = mservice.get_random_meal(meals_list)
-    meal_card(meal, breakfast_card)
+    with ui.column():
+        ui.label('Breakfast').classes('text-h4 text-center')
+        meal_card(meal, breakfast_card)
 
 @ui.refreshable
 def lunch_card():
     meals_list = app.storage.user.get('lunch_list', [])
     meal = mservice.get_random_meal(meals_list)
-    meal_card(meal, lunch_card)
+    with ui.column():
+        ui.label('Lunch').classes('text-h4 text-center')
+        meal_card(meal, lunch_card)
 
 @ui.refreshable
 def dinner_card():
     meals_list = app.storage.user.get('dinner_list', [])
     meal = mservice.get_random_meal(meals_list)
-    meal_card(meal, dinner_card)
+    with ui.column():
+        ui.label('Dinner').classes('text-h4 text-center')
+        meal_card(meal, dinner_card)
 
 @ui.page('/')
 def index():
