@@ -1,113 +1,119 @@
-"""
-A sample Hello World server.
-"""
-import datetime
-import os
-import pickle
-import logging
 import pandas as pd
-import json
+import secrets
+import random
+import re
 
-from flask import Flask, render_template, request, jsonify
-from flaskext.markdown import Markdown
-
-
-DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
-env = os.environ.get('ENV', 'PROD')
-CACHE_FILENAME = './menu.pickle'
-
-menuData= dict()
-
-# pylint: disable=C0103
-app = Flask(__name__)
-app.config["JSON_AS_ASCII"] = False
-app.config["JSONIFY_MIMETYPE"] = "application/json; charset=utf-8"
-Markdown(app)
-
-### Handlers
-
-@app.route('/', methods=['GET'])
-def menu():
-    global menuData
-    """Return menu for a week"""
-    menuData = getMenu()    
-    app.logger.debug(menuData)
-    
-    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):        
-        return menuData
-    else:
-        return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menuData, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-    
-
-@app.route('/dish/<dishType>/<query>', methods=['GET'])
-def dish(dishType, query):
-    """Return dish description for a week"""
-    menuData = getMenu()
-
-    dishData = ""
-    for dish in menuData[dishType]:
-        print(dish)
-        if dish.startswith(query):
-            dishData = dish
-            break
-    
-    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):
-        app.logger.debug(dishData)
-        return dishData
-    else:
-        return render_template('dish.html', dishType=dishType, dishData=dishData, debug=(env == 'DEV'))
-
-    
-
-@app.route('/menu', methods=['PATCH'])
-def flashMenuHandler():
-    """Flash the cache with new data from Google Sheets"""
-    flashMenu()
-    return ('', 204)
-
-#### Service funcs
-
-def getMenu():
-    global menuData
-    if not menuData :
-        try:
-            if os.path.isfile(CACHE_FILENAME):
-                with open(CACHE_FILENAME, 'rb') as cache:
-                    menuData = pickle.load(cache)            
-            else:
-                menuData = flashMenu()
-        except :
-            app.logger.WARN('Cannot unpickle cache.')        
-            menuData = genMenu(DATA_URL)
-    
-    return menuData
-
-def flashMenu():
-    global menuData
-    app.logger.info('Flash the cache with new data from the remote host')
-    menuData = genMenu(DATA_URL)
-    with open(CACHE_FILENAME, 'wb') as cache:
-        pickle.dump(menu, cache, protocol=pickle.HIGHEST_PROTOCOL)        
-    return menuData
+from nicegui import ui, app
 
 
-def importMenu(url):
+URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
+
+
+def load_menu(url):
     df = pd.read_csv(url)
     return df
 
-def shuffleWeekMenu(df, type):
-  breakfast_ser = df[type][df[type].notna()]
-  return breakfast_ser.sample(frac=1).to_list()[0:7]
 
-def genMenu(url):
-    app.logger.info('Loads menu from the remote host')
-    df = importMenu(url)
-    breakfast_list = shuffleWeekMenu(df, 'breakfast')
-    lunch_list = shuffleWeekMenu(df, 'lunch')
-    dinner_list = shuffleWeekMenu(df, 'dinner')
-    snacks_list = shuffleWeekMenu(df, 'snacks')
-    return {'breakfast':breakfast_list,  'lunch': lunch_list, 'dinner':dinner_list, 'snacks':snacks_list}
+def shuffle_week_menu(df, type):
+    breakfast_ser = df[type][df[type].notna()]
+    return breakfast_ser.sample(frac=1).to_list()[0:7]
 
-if __name__ == '__main__':
-    server_port = os.environ.get('PORT', '8080')
-    app.run(debug=(env == 'DEV'), port=server_port, host='0.0.0.0')
+
+def week_menu(df, type):
+    meal_ser = df[type][df[type].notna()]
+    return meal_ser.to_list()[0:7]
+
+
+def load_week_menu(url, meal_type):
+    df = load_menu(url)
+    return week_menu(df, meal_type)
+
+
+def gen_menu(url):
+    df = load_menu(url)
+    breakfast_list = shuffle_week_menu(df, 'breakfast')
+    lunch_list = shuffle_week_menu(df, 'lunch')
+    dinner_list = shuffle_week_menu(df, 'dinner')
+    snacks_list = shuffle_week_menu(df, 'snacks')
+    return {'breakfast': breakfast_list,  'lunch': lunch_list, 'dinner': dinner_list, 'snacks': snacks_list}
+
+
+def get_random_meal(meal_list):
+    l = len(meal_list)
+    if l > 0:
+        return meal_list[random.randrange(0, l)]
+
+
+def get_meal_image(txt):
+    res = re.search(r"!\[[^\]]*\]\((.*?)\s*(\"(?:.*[^\"])\")?\s*\)", txt)
+    if res != None:
+        return res.group(1)
+    else:
+        return 'https://placehold.co/600x400?text=No+Image'
+
+
+def get_meal_title(txt: str):
+    try:
+        i = txt.index('!')
+    except:
+        i = 0
+    return txt[:i]
+
+
+def get_meal_description(txt: str):
+    try:
+        i = txt.index('**ingredients:**')
+    except:
+        i = 0
+    return txt[i:]
+
+
+# @ui.refreshable
+def meal_card(meal: str, card: ui.refreshable):
+    with ui.card().tight():
+        title = get_meal_title(meal)
+        image_url = get_meal_image(meal)
+        desc = get_meal_description(meal)
+        with ui.image(image_url).style('min-width: 20em; max-width: 35em; min-height: 20em; max-height: 35em;'):
+            ui.label(title).classes(
+                'absolute-bottom text-subtitle2 text-center')
+        with ui.card_section():
+            ui.markdown(desc)
+        with ui.card_actions():
+            ui.button(icon='refresh', on_click=card.refresh).props('flat color=blue')
+
+@ui.refreshable
+def breakfast_card():
+    meals_list = app.storage.user.get('breakfast_list', [])
+    meal = get_random_meal(meals_list)
+    meal_card(meal, breakfast_card)
+
+@ui.refreshable
+def lunch_card():
+    meals_list = app.storage.user.get('lunch_list', [])
+    meal = get_random_meal(meals_list)
+    meal_card(meal, lunch_card)
+
+@ui.page('/')
+def index():
+    breakfast_list = load_week_menu(URL, 'breakfast')
+    lunch_list = load_week_menu(URL, 'lunch')
+    app.storage.user['breakfast_list'] = breakfast_list
+    app.storage.user['lunch_list'] = lunch_list
+
+    with ui.row():                
+        breakfast_card()
+        lunch_card()
+    with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
+        ui.label('Week menu')
+        ui.button(icon='refresh').props('flat color=white')
+    # mean_card(breakfast_list[0])
+    # mean_card(breakfast_list[1])
+    # mean_card(breakfast_list[2])
+    # mean_card(breakfast_list[3])
+    # mean_card(breakfast_list[4])
+    # mean_card(breakfast_list[5])
+    # mean_card(breakfast_list[6])
+
+
+ui.run(storage_secret=secrets.token_urlsafe(16))
