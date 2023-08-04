@@ -4,3 +4,4 @@
 .readmes
 .venv
 *.pickle
+.nicegui
