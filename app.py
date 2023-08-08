@@ -62,7 +62,7 @@ def index():
         dinner_card()
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
         ui.label('Week menu')
-        ui.button(icon='refresh').props('flat color=white')
+        ui.button(icon='refresh', on_click=lambda: (breakfast_card.refresh(), lunch_card.refresh(), dinner_card.refresh())).props('flat color=white')
     # mean_card(breakfast_list[0])
     # mean_card(breakfast_list[1])
     # mean_card(breakfast_list[2])
