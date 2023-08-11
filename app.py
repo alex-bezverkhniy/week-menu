@@ -1,113 +1,75 @@
-"""
-A sample Hello World server.
-"""
-import datetime
-import os
-import pickle
-import logging
-import pandas as pd
-import json
+import secrets
+import meals_service as mservice
 
-from flask import Flask, render_template, request, jsonify
-from flaskext.markdown import Markdown
+from nicegui import ui, app
 
 
-DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
-env = os.environ.get('ENV', 'PROD')
-CACHE_FILENAME = './menu.pickle'
+URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9ZmUxoD6z1PT9YgehwKVg2V6shIwLiHoB0L1ak1eA-7lidZ8wiigziQIMfGKXl2twqarK5OaYPqZ/pub?gid=720294345&single=true&output=csv'
 
-menuData= dict()
+# @ui.refreshable
+def meal_card(meal: str, card: ui.refreshable):
+    with ui.card().tight():
+        title = mservice.get_meal_title(meal)
+        image_url = mservice.get_meal_image(meal)
+        desc = mservice.get_meal_description(meal)
+        with ui.image(image_url).style('min-width: 15em; max-width: 35em; min-height: 15em; max-height: 35em;'):
+            ui.label(title).classes(
+                'absolute-bottom text-subtitle2 text-center')            
+        with ui.card_section():
+            ui.markdown(desc)
+        with ui.card_actions():
+            ui.button(icon='refresh', on_click=card.refresh).props('flat color=blue')
 
-# pylint: disable=C0103
-app = Flask(__name__)
-app.config["JSON_AS_ASCII"] = False
-app.config["JSONIFY_MIMETYPE"] = "application/json; charset=utf-8"
-Markdown(app)
+@ui.refreshable
+def breakfast_card():
+    meals_list = app.storage.user.get('breakfast_list', [])
+    meal = mservice.get_random_meal(meals_list)
+    with ui.column():
+        ui.label('Breakfast').classes('text-h4 text-center')
+        meal_card(meal, breakfast_card)
 
-### Handlers
+@ui.refreshable
+def lunch_card():
+    meals_list = app.storage.user.get('lunch_list', [])
+    meal = mservice.get_random_meal(meals_list)
+    with ui.column():
+        ui.label('Lunch').classes('text-h4 text-center')
+        meal_card(meal, lunch_card)
 
-@app.route('/', methods=['GET'])
-def menu():
-    global menuData
-    """Return menu for a week"""
-    menuData = getMenu()    
-    app.logger.debug(menuData)
+@ui.refreshable
+def dinner_card():
+    meals_list = app.storage.user.get('dinner_list', [])
+    meal = mservice.get_random_meal(meals_list)
+    with ui.column():
+        ui.label('Dinner').classes('text-h4 text-center')
+        meal_card(meal, dinner_card)
+
+@ui.page('/')
+def index():
+    df = mservice.load_menu(URL)
+    breakfast_list = mservice.week_menu(df, 'breakfast')
+    lunch_list = mservice.week_menu(df, 'lunch')
+    dinner_list = mservice.week_menu(df, 'dinner')
     
-    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):        
-        return menuData
-    else:
-        return render_template('index.html', current_weekday=(datetime.datetime.today().weekday()), debug=(env == 'DEV'), menu=menuData, week_days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-    
-
-@app.route('/dish/<dishType>/<query>', methods=['GET'])
-def dish(dishType, query):
-    """Return dish description for a week"""
-    menuData = getMenu()
-
-    dishData = ""
-    for dish in menuData[dishType]:
-        print(dish)
-        if dish.startswith(query):
-            dishData = dish
-            break
-    
-    if 'Content-Type' in request.headers and request.headers['Content-Type'].startswith("application/json"):
-        app.logger.debug(dishData)
-        return dishData
-    else:
-        return render_template('dish.html', dishType=dishType, dishData=dishData, debug=(env == 'DEV'))
-
+    app.storage.user['breakfast_list'] = breakfast_list
+    app.storage.user['lunch_list'] = lunch_list
+    app.storage.user['dinner_list'] = dinner_list
     
 
-@app.route('/menu', methods=['PATCH'])
-def flashMenuHandler():
-    """Flash the cache with new data from Google Sheets"""
-    flashMenu()
-    return ('', 204)
-
-#### Service funcs
-
-def getMenu():
-    global menuData
-    if not menuData :
-        try:
-            if os.path.isfile(CACHE_FILENAME):
-                with open(CACHE_FILENAME, 'rb') as cache:
-                    menuData = pickle.load(cache)            
-            else:
-                menuData = flashMenu()
-        except :
-            app.logger.WARN('Cannot unpickle cache.')        
-            menuData = genMenu(DATA_URL)
-    
-    return menuData
-
-def flashMenu():
-    global menuData
-    app.logger.info('Flash the cache with new data from the remote host')
-    menuData = genMenu(DATA_URL)
-    with open(CACHE_FILENAME, 'wb') as cache:
-        pickle.dump(menu, cache, protocol=pickle.HIGHEST_PROTOCOL)        
-    return menuData
+    with ui.row():                
+        breakfast_card()
+        lunch_card()
+        dinner_card()
+    with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
+        ui.label('Week menu')
+        ui.button(icon='refresh', on_click=lambda: (breakfast_card.refresh(), lunch_card.refresh(), dinner_card.refresh())).props('flat color=white')
+    # mean_card(breakfast_list[0])
+    # mean_card(breakfast_list[1])
+    # mean_card(breakfast_list[2])
+    # mean_card(breakfast_list[3])
+    # mean_card(breakfast_list[4])
+    # mean_card(breakfast_list[5])
+    # mean_card(breakfast_list[6])
 
 
-def importMenu(url):
-    df = pd.read_csv(url)
-    return df
-
-def shuffleWeekMenu(df, type):
-  breakfast_ser = df[type][df[type].notna()]
-  return breakfast_ser.sample(frac=1).to_list()[0:7]
-
-def genMenu(url):
-    app.logger.info('Loads menu from the remote host')
-    df = importMenu(url)
-    breakfast_list = shuffleWeekMenu(df, 'breakfast')
-    lunch_list = shuffleWeekMenu(df, 'lunch')
-    dinner_list = shuffleWeekMenu(df, 'dinner')
-    snacks_list = shuffleWeekMenu(df, 'snacks')
-    return {'breakfast':breakfast_list,  'lunch': lunch_list, 'dinner':dinner_list, 'snacks':snacks_list}
-
-if __name__ == '__main__':
-    server_port = os.environ.get('PORT', '8080')
-    app.run(debug=(env == 'DEV'), port=server_port, host='0.0.0.0')
+ui.run(storage_secret=secrets.token_urlsafe(16))
